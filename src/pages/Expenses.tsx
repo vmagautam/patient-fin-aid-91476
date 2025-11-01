@@ -278,7 +278,6 @@ const Expenses = () => {
         onSave={handleAddExpense}
         patients={mockPatients}
         expenseTypes={mockExpenseTypes}
-        expenseGroups={[]}
         editExpense={editingExpense}
       />
 

@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Expense, Patient, ExpenseType, ExpenseGroup } from '@/types';
+import { Expense, Patient, ExpenseType } from '@/types';
 import { toast } from 'sonner';
 
 interface AddExpenseDialogProps {
@@ -18,12 +18,10 @@ interface AddExpenseDialogProps {
   onSave: (expense: Omit<Expense, 'id'>) => void;
   patients: Patient[];
   expenseTypes: ExpenseType[];
-  expenseGroups: ExpenseGroup[];
   editExpense?: Expense;
-  onCreateGroup?: () => void;
 }
 
-const AddExpenseDialog = ({ open, onOpenChange, onSave, patients, expenseTypes, expenseGroups, editExpense, onCreateGroup }: AddExpenseDialogProps) => {
+const AddExpenseDialog = ({ open, onOpenChange, onSave, patients, expenseTypes, editExpense }: AddExpenseDialogProps) => {
   const [formData, setFormData] = useState<Omit<Expense, 'id'>>({
     patientId: editExpense?.patientId || '',
     expenseTypeId: editExpense?.expenseTypeId || '',
@@ -136,44 +134,6 @@ const AddExpenseDialog = ({ open, onOpenChange, onSave, patients, expenseTypes, 
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="expenseGroup">Expense Group (Optional)</Label>
-            <div className="flex gap-2">
-              <Select
-                value={formData.expenseGroupId || 'none'}
-                onValueChange={(value) => setFormData({ ...formData, expenseGroupId: value === 'none' ? undefined : value })}
-              >
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="No group" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No group</SelectItem>
-                  {expenseGroups
-                    .filter(g => !formData.patientId || g.patientId === formData.patientId)
-                    .map((group) => (
-                      <SelectItem key={group.id} value={group.id}>
-                        {group.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              {onCreateGroup && (
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="outline"
-                  onClick={() => {
-                    onOpenChange(false);
-                    onCreateGroup();
-                  }}
-                  title="Create new group"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
           </div>
 
           <div>

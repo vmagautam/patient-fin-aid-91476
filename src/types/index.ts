@@ -40,22 +40,11 @@ export interface Medicine {
   restockHistory?: RestockRecord[];
 }
 
-export interface ExpenseGroup {
-  id: string;
-  patientId: string;
-  name: string;
-  date: string;
-  totalAmount: number;
-  paidAmount: number;
-  expenseIds: string[];
-}
-
 export interface Expense {
   id: string;
   patientId: string;
   expenseTypeId: string;
   expenseTypeName: string;
-  expenseGroupId?: string;
   date: string;
   description: string;
   quantity: number;
@@ -70,7 +59,6 @@ export interface Payment {
   id: string;
   patientId: string;
   expenseId: string;
-  expenseGroupId?: string;
   amount: number;
   date: string;
   method: 'Cash' | 'Card' | 'UPI' | 'Insurance';
