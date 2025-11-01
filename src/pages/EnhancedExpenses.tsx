@@ -2,13 +2,14 @@ import { useState, useMemo } from 'react';
 import PageHeader from '@/components/Layout/PageHeader';
 import BottomNav from '@/components/Layout/BottomNav';
 import GlobalSearchBar from '@/components/Search/GlobalSearchBar';
-import PatientExpenseCard from '@/components/Expenses/PatientExpenseCard';
 import AddExpenseDialog from '@/components/Dialogs/AddExpenseDialog';
 import AddMultipleExpensesDialog from '@/components/Dialogs/AddMultipleExpensesDialog';
 import DeleteConfirmDialog from '@/components/Dialogs/DeleteConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, UserPlus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, UserPlus, DollarSign, Calendar, CheckCircle, XCircle, Edit, Trash2, User } from 'lucide-react';
 import { Expense, Patient, ExpenseType, Medicine } from '@/types';
 import { toast } from 'sonner';
 
@@ -100,50 +101,57 @@ const mockExpenses: Expense[] = [
     isPaid: true,
     paidAmount: 500,
   },
+  {
+    id: '4',
+    patientId: '2',
+    expenseTypeId: '1',
+    expenseTypeName: 'Medicine',
+    date: '2024-03-12',
+    description: 'Blood pressure medication',
+    quantity: 30,
+    unitPrice: 3,
+    totalAmount: 90,
+    isPaid: false,
+    paidAmount: 45,
+  },
 ];
 
 const EnhancedExpenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
   const [searchQuery, setSearchQuery] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isAddMultipleDialogOpen, setIsAddMultipleDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>(undefined);
   const [deleteExpense, setDeleteExpense] = useState<Expense | undefined>(undefined);
 
-  // Filter by search
+  // Filter and sort expenses
   const filteredExpenses = useMemo(() => {
-    if (!searchQuery) return expenses;
-    
-    const query = searchQuery.toLowerCase();
-    return expenses.filter((exp) => {
-      const patient = mockPatients.find(p => p.id === exp.patientId);
-      return (
-        exp.description.toLowerCase().includes(query) ||
-        exp.expenseTypeName.toLowerCase().includes(query) ||
-        patient?.name.toLowerCase().includes(query)
-      );
-    });
-  }, [expenses, searchQuery]);
+    let filtered = expenses;
 
-  // Group expenses by patient
-  const expensesByPatient = useMemo(() => {
-    const grouped = new Map<string, Expense[]>();
-    
-    filteredExpenses.forEach((expense) => {
-      const existing = grouped.get(expense.patientId) || [];
-      grouped.set(expense.patientId, [...existing, expense]);
-    });
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((exp) => {
+        const patient = mockPatients.find(p => p.id === exp.patientId);
+        return (
+          exp.description.toLowerCase().includes(query) ||
+          exp.expenseTypeName.toLowerCase().includes(query) ||
+          patient?.name.toLowerCase().includes(query)
+        );
+      });
+    }
 
-    // Sort expenses within each patient by date (newest first)
-    grouped.forEach((exps, patientId) => {
-      grouped.set(
-        patientId,
-        exps.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      );
-    });
+    // Payment filter
+    if (paymentFilter === 'paid') {
+      filtered = filtered.filter(exp => exp.isPaid);
+    } else if (paymentFilter === 'unpaid') {
+      filtered = filtered.filter(exp => !exp.isPaid);
+    }
 
-    return grouped;
-  }, [filteredExpenses]);
+    // Sort by date (newest first)
+    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [expenses, searchQuery, paymentFilter]);
 
   const handleSaveExpense = (expenseData: Omit<Expense, 'id'>) => {
     if (editingExpense) {
@@ -185,12 +193,13 @@ const EnhancedExpenses = () => {
 
   const totalAmount = filteredExpenses.reduce((sum, exp) => sum + exp.totalAmount, 0);
   const paidAmount = filteredExpenses.reduce((sum, exp) => sum + exp.paidAmount, 0);
+  const unpaidAmount = totalAmount - paidAmount;
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <PageHeader
         title="Patient Services"
-        subtitle={`$${totalAmount.toFixed(2)} total • $${paidAmount.toFixed(2)} paid`}
+        subtitle={`${filteredExpenses.length} service${filteredExpenses.length !== 1 ? 's' : ''}`}
         action={
           <div className="flex gap-2">
             <Button 
@@ -198,7 +207,7 @@ const EnhancedExpenses = () => {
               variant="outline"
               className="bg-white/20 hover:bg-white/30 text-white border-white/30"
               onClick={() => setIsAddMultipleDialogOpen(true)}
-              title="Add multiple services"
+              title="Add multiple services for patient"
             >
               <UserPlus className="h-5 w-5" />
             </Button>
@@ -209,6 +218,7 @@ const EnhancedExpenses = () => {
                 setEditingExpense(undefined);
                 setIsAddDialogOpen(true);
               }}
+              title="Add single service"
             >
               <Plus className="h-5 w-5" />
             </Button>
@@ -227,31 +237,126 @@ const EnhancedExpenses = () => {
           />
         </div>
 
-        {/* Expenses grouped by Patient */}
-        <div className="space-y-4">
-          {Array.from(expensesByPatient.entries()).map(([patientId, patientExpenses]) => {
-            const patient = mockPatients.find(p => p.id === patientId);
-            if (!patient) return null;
+        {/* Summary Stats */}
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <Card className="p-4 text-center shadow-soft">
+            <div className="text-2xl font-bold text-foreground">${totalAmount.toFixed(0)}</div>
+            <div className="text-xs text-muted-foreground mt-1">Total</div>
+          </Card>
+          <Card className="p-4 text-center shadow-soft">
+            <div className="text-2xl font-bold text-success">${paidAmount.toFixed(0)}</div>
+            <div className="text-xs text-muted-foreground mt-1">Paid</div>
+          </Card>
+          <Card className="p-4 text-center shadow-soft">
+            <div className="text-2xl font-bold text-warning">${unpaidAmount.toFixed(0)}</div>
+            <div className="text-xs text-muted-foreground mt-1">Pending</div>
+          </Card>
+        </div>
 
+        {/* Payment Filter Tabs */}
+        <Tabs value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as typeof paymentFilter)} className="w-full mb-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="paid">Paid</TabsTrigger>
+            <TabsTrigger value="unpaid">Unpaid</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {/* Expenses List */}
+        <div className="space-y-3">
+          {filteredExpenses.map((expense) => {
+            const patient = mockPatients.find(p => p.id === expense.patientId);
+            
             return (
-              <PatientExpenseCard
-                key={patientId}
-                patient={patient}
-                expenses={patientExpenses}
-                onExpenseEdit={handleEditExpense}
-                onExpenseDelete={setDeleteExpense}
-              />
+              <Card key={expense.id} className="p-4 shadow-soft hover:shadow-medium transition-all">
+                {/* Header with Patient Info */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="bg-primary/10 p-1.5 rounded-full">
+                        <User className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                      <span className="text-sm font-semibold text-primary">{patient?.name}</span>
+                      {expense.isPaid ? (
+                        <CheckCircle className="h-4 w-4 text-success ml-auto" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-warning ml-auto" />
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline" className="text-xs">
+                        {expense.expenseTypeName}
+                      </Badge>
+                    </div>
+                    
+                    <h3 className="font-semibold text-base text-foreground">{expense.description}</h3>
+                  </div>
+                </div>
+
+                {/* Details */}
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      <span>{new Date(expense.date).toLocaleDateString()}</span>
+                    </div>
+                    <span className="text-muted-foreground">
+                      {expense.quantity} × ${expense.unitPrice.toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-border">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-primary" />
+                      <span className="font-semibold text-lg text-foreground">
+                        ${expense.totalAmount.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs text-muted-foreground">Paid: </span>
+                      <span className="font-medium text-success">
+                        ${expense.paidAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1 h-10"
+                      onClick={() => handleEditExpense(expense)}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1 h-10 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() => setDeleteExpense(expense)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </Card>
             );
           })}
 
           {filteredExpenses.length === 0 && (
             <Card className="p-8 text-center">
-              <p className="text-muted-foreground">
-                No services found. Add services for your patients to get started.
+              <p className="text-muted-foreground mb-4">
+                {searchQuery || paymentFilter !== 'all' 
+                  ? 'No services found matching your filters' 
+                  : 'No services recorded yet'}
               </p>
               <Button 
-                className="mt-4"
                 onClick={() => setIsAddMultipleDialogOpen(true)}
+                className="mt-2"
               >
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add Services for Patient
