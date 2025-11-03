@@ -5,11 +5,13 @@ import GlobalSearchBar from '@/components/Search/GlobalSearchBar';
 import AddExpenseDialog from '@/components/Dialogs/AddExpenseDialog';
 import AddMultipleExpensesDialog from '@/components/Dialogs/AddMultipleExpensesDialog';
 import DeleteConfirmDialog from '@/components/Dialogs/DeleteConfirmDialog';
+import DateRangeFilter from '@/components/Reports/DateRangeFilter';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, UserPlus, DollarSign, Calendar, CheckCircle, XCircle, Edit, Trash2, User } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Plus, UserPlus, DollarSign, Calendar, CheckCircle, XCircle, Edit, Trash2, User, FileText, Clock } from 'lucide-react';
 import { Expense, Patient, ExpenseType, Medicine } from '@/types';
 import { toast } from 'sonner';
 
@@ -116,17 +118,30 @@ const mockExpenses: Expense[] = [
   },
 ];
 
+// Grouped expense type for display
+type GroupedExpense = {
+  patientId: string;
+  patientName: string;
+  date: string;
+  expenses: Expense[];
+  totalAmount: number;
+  paidAmount: number;
+  isPaid: boolean;
+};
+
 const EnhancedExpenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
   const [searchQuery, setSearchQuery] = useState('');
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isAddMultipleDialogOpen, setIsAddMultipleDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>(undefined);
   const [deleteExpense, setDeleteExpense] = useState<Expense | undefined>(undefined);
 
-  // Filter and sort expenses
-  const filteredExpenses = useMemo(() => {
+  // Group expenses by patient and date
+  const groupedExpenses = useMemo(() => {
     let filtered = expenses;
 
     // Search filter
@@ -142,6 +157,16 @@ const EnhancedExpenses = () => {
       });
     }
 
+    // Date range filter
+    if (startDate) {
+      const startStr = startDate.toISOString().split('T')[0];
+      filtered = filtered.filter(exp => exp.date >= startStr);
+    }
+    if (endDate) {
+      const endStr = endDate.toISOString().split('T')[0];
+      filtered = filtered.filter(exp => exp.date <= endStr);
+    }
+
     // Payment filter
     if (paymentFilter === 'paid') {
       filtered = filtered.filter(exp => exp.isPaid);
@@ -149,9 +174,38 @@ const EnhancedExpenses = () => {
       filtered = filtered.filter(exp => !exp.isPaid);
     }
 
-    // Sort by date (newest first)
-    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [expenses, searchQuery, paymentFilter]);
+    // Group by patient + date
+    const grouped = filtered.reduce((acc, expense) => {
+      const key = `${expense.patientId}-${expense.date}`;
+      if (!acc[key]) {
+        const patient = mockPatients.find(p => p.id === expense.patientId);
+        acc[key] = {
+          patientId: expense.patientId,
+          patientName: patient?.name || 'Unknown Patient',
+          date: expense.date,
+          expenses: [],
+          totalAmount: 0,
+          paidAmount: 0,
+          isPaid: true
+        };
+      }
+      
+      acc[key].expenses.push(expense);
+      acc[key].totalAmount += expense.totalAmount;
+      acc[key].paidAmount += expense.paidAmount;
+      
+      if (!expense.isPaid) {
+        acc[key].isPaid = false;
+      }
+      
+      return acc;
+    }, {} as Record<string, GroupedExpense>);
+
+    // Convert to array and sort by date (newest first)
+    return Object.values(grouped).sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  }, [expenses, searchQuery, paymentFilter, startDate, endDate]);
 
   const handleSaveExpense = (expenseData: Omit<Expense, 'id'>) => {
     if (editingExpense) {
@@ -191,15 +245,15 @@ const EnhancedExpenses = () => {
     }
   };
 
-  const totalAmount = filteredExpenses.reduce((sum, exp) => sum + exp.totalAmount, 0);
-  const paidAmount = filteredExpenses.reduce((sum, exp) => sum + exp.paidAmount, 0);
+  const totalAmount = groupedExpenses.reduce((sum, group) => sum + group.totalAmount, 0);
+  const paidAmount = groupedExpenses.reduce((sum, group) => sum + group.paidAmount, 0);
   const unpaidAmount = totalAmount - paidAmount;
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <PageHeader
-        title="Patient Services"
-        subtitle={`${filteredExpenses.length} service${filteredExpenses.length !== 1 ? 's' : ''}`}
+        title="Service Billing"
+        subtitle={`${groupedExpenses.length} statement${groupedExpenses.length !== 1 ? 's' : ''}`}
         action={
           <div className="flex gap-2">
             <Button 
@@ -232,8 +286,22 @@ const EnhancedExpenses = () => {
           <GlobalSearchBar
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder="Search by patient, service type, description..."
+            placeholder="Search by patient, service, description..."
             onClear={() => setSearchQuery('')}
+          />
+        </div>
+
+        {/* Date Range Filter */}
+        <div className="mb-4">
+          <DateRangeFilter
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+            onClear={() => {
+              setStartDate(undefined);
+              setEndDate(undefined);
+            }}
           />
         </div>
 
@@ -262,105 +330,149 @@ const EnhancedExpenses = () => {
           </TabsList>
         </Tabs>
 
-        {/* Expenses List */}
-        <div className="space-y-3">
-          {filteredExpenses.map((expense) => {
-            const patient = mockPatients.find(p => p.id === expense.patientId);
-            
-            return (
-              <Card key={expense.id} className="p-4 shadow-soft hover:shadow-medium transition-all">
-                {/* Header with Patient Info */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="bg-primary/10 p-1.5 rounded-full">
-                        <User className="h-3.5 w-3.5 text-primary" />
+        {/* Billing Statements List */}
+        <div className="space-y-4">
+          {groupedExpenses.map((group, idx) => (
+            <Card key={`${group.patientId}-${group.date}-${idx}`} className="overflow-hidden shadow-soft">
+              {/* Statement Header */}
+              <div className="bg-muted/50 px-4 py-3 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-2 rounded-lg">
+                      <FileText className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-base text-foreground">{group.patientName}</h3>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                        <Calendar className="h-3 w-3" />
+                        <span>{new Date(group.date).toLocaleDateString('en-US', { 
+                          weekday: 'short', 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}</span>
                       </div>
-                      <span className="text-sm font-semibold text-primary">{patient?.name}</span>
-                      {expense.isPaid ? (
-                        <CheckCircle className="h-4 w-4 text-success ml-auto" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-warning ml-auto" />
-                      )}
                     </div>
-                    
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="outline" className="text-xs">
-                        {expense.expenseTypeName}
+                  </div>
+                  <div>
+                    {group.isPaid ? (
+                      <Badge className="bg-success/10 text-success border-success/20">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Paid
                       </Badge>
-                    </div>
-                    
-                    <h3 className="font-semibold text-base text-foreground">{expense.description}</h3>
+                    ) : (
+                      <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Pending
+                      </Badge>
+                    )}
                   </div>
                 </div>
+              </div>
 
-                {/* Details */}
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>{new Date(expense.date).toLocaleDateString()}</span>
+              {/* Service Line Items */}
+              <div className="px-4 py-3">
+                <div className="space-y-2">
+                  {group.expenses.map((expense) => (
+                    <div key={expense.id} className="flex items-start justify-between py-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="secondary" className="text-xs">
+                            {expense.expenseTypeName}
+                          </Badge>
+                        </div>
+                        <p className="text-sm font-medium text-foreground">{expense.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Qty: {expense.quantity} × ${expense.unitPrice.toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className="text-sm font-semibold text-foreground">
+                          ${expense.totalAmount.toFixed(2)}
+                        </p>
+                        {!expense.isPaid && expense.paidAmount > 0 && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Paid: ${expense.paidAmount.toFixed(2)}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-muted-foreground">
-                      {expense.quantity} × ${expense.unitPrice.toFixed(2)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-border">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-primary" />
-                      <span className="font-semibold text-lg text-foreground">
-                        ${expense.totalAmount.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs text-muted-foreground">Paid: </span>
-                      <span className="font-medium text-success">
-                        ${expense.paidAmount.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="flex-1 h-10"
-                      onClick={() => handleEditExpense(expense)}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="flex-1 h-10 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                      onClick={() => setDeleteExpense(expense)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </div>
+                  ))}
                 </div>
-              </Card>
-            );
-          })}
 
-          {filteredExpenses.length === 0 && (
+                <Separator className="my-3" />
+
+                {/* Totals Section */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-medium text-foreground">${group.totalAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Amount Paid</span>
+                    <span className="font-medium text-success">${group.paidAmount.toFixed(2)}</span>
+                  </div>
+                  {!group.isPaid && (
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                      <span className="font-semibold text-foreground">Amount Due</span>
+                      <span className="font-bold text-lg text-warning">
+                        ${(group.totalAmount - group.paidAmount).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 mt-4 pt-3 border-t border-border">
+                  {group.expenses.map((expense) => (
+                    <div key={expense.id} className="flex gap-2 flex-1">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => handleEditExpense(expense)}
+                      >
+                        <Edit className="h-3.5 w-3.5 mr-1.5" />
+                        Edit
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="text-destructive hover:bg-destructive/10"
+                        onClick={() => setDeleteExpense(expense)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          ))}
+
+          {groupedExpenses.length === 0 && (
             <Card className="p-8 text-center">
-              <p className="text-muted-foreground mb-4">
-                {searchQuery || paymentFilter !== 'all' 
-                  ? 'No services found matching your filters' 
-                  : 'No services recorded yet'}
-              </p>
-              <Button 
-                onClick={() => setIsAddMultipleDialogOpen(true)}
-                className="mt-2"
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add Services for Patient
-              </Button>
+              <div className="flex flex-col items-center">
+                <div className="bg-muted/50 p-4 rounded-full mb-4">
+                  <FileText className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground mb-2 font-medium">
+                  {searchQuery || paymentFilter !== 'all' || startDate || endDate
+                    ? 'No billing statements found' 
+                    : 'No services recorded yet'}
+                </p>
+                <p className="text-xs text-muted-foreground mb-4">
+                  {searchQuery || paymentFilter !== 'all' || startDate || endDate
+                    ? 'Try adjusting your filters' 
+                    : 'Start by adding services for a patient'}
+                </p>
+                <Button 
+                  onClick={() => setIsAddMultipleDialogOpen(true)}
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add Patient Services
+                </Button>
+              </div>
             </Card>
           )}
         </div>
