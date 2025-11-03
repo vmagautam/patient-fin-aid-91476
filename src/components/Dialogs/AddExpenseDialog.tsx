@@ -24,6 +24,7 @@ interface AddExpenseDialogProps {
 const AddExpenseDialog = ({ open, onOpenChange, onSave, patients, expenseTypes, editExpense }: AddExpenseDialogProps) => {
   const [formData, setFormData] = useState<Omit<Expense, 'id'>>({
     patientId: editExpense?.patientId || '',
+    registrationNumber: editExpense?.registrationNumber || '',
     expenseTypeId: editExpense?.expenseTypeId || '',
     expenseTypeName: editExpense?.expenseTypeName || '',
     date: editExpense?.date || new Date().toISOString().split('T')[0],
@@ -62,8 +63,15 @@ const AddExpenseDialog = ({ open, onOpenChange, onSave, patients, expenseTypes, 
       return;
     }
 
+    const patient = patients.find(p => p.id === formData.patientId);
+    if (!patient) {
+      toast.error('Invalid patient selection');
+      return;
+    }
+
     const expenseData = {
       ...formData,
+      registrationNumber: patient.registrationNumber,
       date: selectedDate ? selectedDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       totalAmount: formData.quantity * formData.unitPrice,
     };
@@ -77,6 +85,7 @@ const AddExpenseDialog = ({ open, onOpenChange, onSave, patients, expenseTypes, 
   const resetForm = () => {
     setFormData({
       patientId: '',
+      registrationNumber: '',
       expenseTypeId: '',
       expenseTypeName: '',
       date: new Date().toISOString().split('T')[0],
@@ -110,7 +119,7 @@ const AddExpenseDialog = ({ open, onOpenChange, onSave, patients, expenseTypes, 
               <SelectContent>
                 {patients.map((patient) => (
                   <SelectItem key={patient.id} value={patient.id}>
-                    {patient.name}
+                    {patient.name} ({patient.registrationNumber})
                   </SelectItem>
                 ))}
               </SelectContent>

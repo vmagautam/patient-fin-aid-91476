@@ -172,8 +172,15 @@ const AddMultipleExpensesDialog = ({
       return;
     }
 
+    const patient = patients.find(p => p.id === patientId);
+    if (!patient) {
+      toast.error('Invalid patient selection');
+      return;
+    }
+
     const expenses: Omit<Expense, 'id'>[] = expenseItems.map(item => ({
       patientId,
+      registrationNumber: patient.registrationNumber,
       expenseTypeId: item.expenseTypeId,
       expenseTypeName: item.expenseTypeName,
       date: selectedDate.toISOString().split('T')[0],
@@ -230,7 +237,7 @@ const AddMultipleExpensesDialog = ({
                 <SelectContent>
                   {patients.map((patient) => (
                     <SelectItem key={patient.id} value={patient.id} className="text-base py-3">
-                      {patient.name}
+                      {patient.name} ({patient.registrationNumber})
                     </SelectItem>
                   ))}
                 </SelectContent>

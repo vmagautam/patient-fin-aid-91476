@@ -20,6 +20,7 @@ const mockPatients: Patient[] = [
   {
     id: '1',
     name: 'John Smith',
+    registrationNumber: 'REG-2024-001',
     age: 45,
     gender: 'Male',
     contact: '+1 234-567-8900',
@@ -30,6 +31,7 @@ const mockPatients: Patient[] = [
   {
     id: '2',
     name: 'Sarah Johnson',
+    registrationNumber: 'REG-2024-002',
     age: 32,
     gender: 'Female',
     contact: '+1 234-567-8901',
@@ -40,6 +42,7 @@ const mockPatients: Patient[] = [
   {
     id: '3',
     name: 'Michael Brown',
+    registrationNumber: 'REG-2024-003',
     age: 58,
     gender: 'Male',
     contact: '+1 234-567-8902',
@@ -66,6 +69,7 @@ const mockExpenses: Expense[] = [
   {
     id: '1',
     patientId: '1',
+    registrationNumber: 'REG-2024-001',
     expenseTypeId: '1',
     expenseTypeName: 'Medicine',
     date: '2024-03-15',
@@ -80,6 +84,7 @@ const mockExpenses: Expense[] = [
   {
     id: '2',
     patientId: '1',
+    registrationNumber: 'REG-2024-001',
     expenseTypeId: '2',
     expenseTypeName: 'Rehab Session',
     date: '2024-03-14',
@@ -93,6 +98,7 @@ const mockExpenses: Expense[] = [
   {
     id: '3',
     patientId: '3',
+    registrationNumber: 'REG-2024-003',
     expenseTypeId: '3',
     expenseTypeName: 'Diagnostic Test',
     date: '2024-03-13',
@@ -106,6 +112,7 @@ const mockExpenses: Expense[] = [
   {
     id: '4',
     patientId: '2',
+    registrationNumber: 'REG-2024-002',
     expenseTypeId: '1',
     expenseTypeName: 'Medicine',
     date: '2024-03-12',
@@ -122,6 +129,7 @@ const mockExpenses: Expense[] = [
 type GroupedExpense = {
   patientId: string;
   patientName: string;
+  registrationNumber: string;
   date: string;
   expenses: Expense[];
   totalAmount: number;
@@ -152,7 +160,8 @@ const EnhancedExpenses = () => {
         return (
           exp.description.toLowerCase().includes(query) ||
           exp.expenseTypeName.toLowerCase().includes(query) ||
-          patient?.name.toLowerCase().includes(query)
+          patient?.name.toLowerCase().includes(query) ||
+          exp.registrationNumber.toLowerCase().includes(query)
         );
       });
     }
@@ -174,14 +183,15 @@ const EnhancedExpenses = () => {
       filtered = filtered.filter(exp => !exp.isPaid);
     }
 
-    // Group by patient + date
+    // Group by registration number + date
     const grouped = filtered.reduce((acc, expense) => {
-      const key = `${expense.patientId}-${expense.date}`;
+      const key = `${expense.registrationNumber}-${expense.date}`;
       if (!acc[key]) {
-        const patient = mockPatients.find(p => p.id === expense.patientId);
+        const patient = mockPatients.find(p => p.registrationNumber === expense.registrationNumber);
         acc[key] = {
           patientId: expense.patientId,
           patientName: patient?.name || 'Unknown Patient',
+          registrationNumber: expense.registrationNumber,
           date: expense.date,
           expenses: [],
           totalAmount: 0,
@@ -286,7 +296,7 @@ const EnhancedExpenses = () => {
           <GlobalSearchBar
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder="Search by patient, service, description..."
+            placeholder="Search by patient, registration no., service..."
             onClear={() => setSearchQuery('')}
           />
         </div>
@@ -343,6 +353,7 @@ const EnhancedExpenses = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold text-base text-foreground">{group.patientName}</h3>
+                      <p className="text-xs text-muted-foreground">Reg: {group.registrationNumber}</p>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                         <Calendar className="h-3 w-3" />
                         <span>{new Date(group.date).toLocaleDateString('en-US', { 
@@ -422,27 +433,29 @@ const EnhancedExpenses = () => {
                   )}
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 mt-4 pt-3 border-t border-border">
+                {/* Action Buttons - Edit/Delete each service */}
+                <div className="space-y-2 mt-4 pt-3 border-t border-border">
                   {group.expenses.map((expense) => (
-                    <div key={expense.id} className="flex gap-2 flex-1">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="flex-1"
-                        onClick={() => handleEditExpense(expense)}
-                      >
-                        <Edit className="h-3.5 w-3.5 mr-1.5" />
-                        Edit
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-destructive hover:bg-destructive/10"
-                        onClick={() => setDeleteExpense(expense)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                    <div key={expense.id} className="flex items-center justify-between bg-muted/30 p-2 rounded-lg">
+                      <span className="text-sm text-muted-foreground">{expense.description}</span>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => handleEditExpense(expense)}
+                        >
+                          <Edit className="h-3.5 w-3.5 mr-1" />
+                          Edit
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeleteExpense(expense)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

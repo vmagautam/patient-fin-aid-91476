@@ -1,6 +1,7 @@
 export interface Patient {
   id: string;
   name: string;
+  registrationNumber: string;
   age: number;
   gender: 'Male' | 'Female' | 'Other';
   contact: string;
@@ -43,6 +44,7 @@ export interface Medicine {
 export interface Expense {
   id: string;
   patientId: string;
+  registrationNumber: string;
   expenseTypeId: string;
   expenseTypeName: string;
   date: string;

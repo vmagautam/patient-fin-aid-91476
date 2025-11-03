@@ -16,6 +16,7 @@ const mockPatients: Patient[] = [
   {
     id: '1',
     name: 'John Smith',
+    registrationNumber: 'REG-2024-001',
     age: 45,
     gender: 'Male',
     contact: '+1 234-567-8900',
@@ -26,6 +27,7 @@ const mockPatients: Patient[] = [
   {
     id: '2',
     name: 'Sarah Johnson',
+    registrationNumber: 'REG-2024-002',
     age: 32,
     gender: 'Female',
     contact: '+1 234-567-8901',
@@ -37,6 +39,7 @@ const mockPatients: Patient[] = [
   {
     id: '3',
     name: 'Michael Brown',
+    registrationNumber: 'REG-2024-003',
     age: 58,
     gender: 'Male',
     contact: '+1 234-567-8902',
@@ -50,6 +53,7 @@ const mockExpenses: Expense[] = [
   {
     id: '1',
     patientId: '1',
+    registrationNumber: 'REG-2024-001',
     expenseTypeId: '1',
     expenseTypeName: 'Medicine',
     date: '2024-03-15',
@@ -63,6 +67,7 @@ const mockExpenses: Expense[] = [
   {
     id: '2',
     patientId: '1',
+    registrationNumber: 'REG-2024-001',
     expenseTypeId: '2',
     expenseTypeName: 'Rehab Session',
     date: '2024-03-14',

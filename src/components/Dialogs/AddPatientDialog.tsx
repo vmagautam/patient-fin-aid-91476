@@ -22,6 +22,7 @@ interface AddPatientDialogProps {
 const AddPatientDialog = ({ open, onOpenChange, onSave, editPatient }: AddPatientDialogProps) => {
   const [formData, setFormData] = useState<Omit<Patient, 'id'>>({
     name: editPatient?.name || '',
+    registrationNumber: editPatient?.registrationNumber || '',
     age: editPatient?.age || 0,
     gender: editPatient?.gender || 'Male',
     contact: editPatient?.contact || '',
@@ -41,7 +42,7 @@ const AddPatientDialog = ({ open, onOpenChange, onSave, editPatient }: AddPatien
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.contact || formData.age <= 0) {
+    if (!formData.name || !formData.registrationNumber || !formData.contact || formData.age <= 0) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -61,6 +62,7 @@ const AddPatientDialog = ({ open, onOpenChange, onSave, editPatient }: AddPatien
   const resetForm = () => {
     setFormData({
       name: '',
+      registrationNumber: '',
       age: 0,
       gender: 'Male',
       contact: '',
@@ -81,12 +83,23 @@ const AddPatientDialog = ({ open, onOpenChange, onSave, editPatient }: AddPatien
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Name *</Label>
+            <Label htmlFor="name">Patient Name *</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="John Doe"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="registrationNumber">Registration Number *</Label>
+            <Input
+              id="registrationNumber"
+              value={formData.registrationNumber}
+              onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
+              placeholder="REG-2024-001"
               required
             />
           </div>
