@@ -148,7 +148,7 @@ const EnhancedExpenses = () => {
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>(undefined);
   const [deleteExpense, setDeleteExpense] = useState<Expense | undefined>(undefined);
 
-  // Group expenses by patient and date
+  // Filter and group expenses
   const groupedExpenses = useMemo(() => {
     let filtered = expenses;
 
@@ -174,13 +174,6 @@ const EnhancedExpenses = () => {
     if (endDate) {
       const endStr = endDate.toISOString().split('T')[0];
       filtered = filtered.filter(exp => exp.date <= endStr);
-    }
-
-    // Payment filter
-    if (paymentFilter === 'paid') {
-      filtered = filtered.filter(exp => exp.isPaid);
-    } else if (paymentFilter === 'unpaid') {
-      filtered = filtered.filter(exp => !exp.isPaid);
     }
 
     // Group by registration number + date
@@ -215,7 +208,7 @@ const EnhancedExpenses = () => {
     return Object.values(grouped).sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
-  }, [expenses, searchQuery, paymentFilter, startDate, endDate]);
+  }, [expenses, searchQuery, startDate, endDate]);
 
   const handleSaveExpense = (expenseData: Omit<Expense, 'id'>) => {
     if (editingExpense) {
@@ -256,14 +249,12 @@ const EnhancedExpenses = () => {
   };
 
   const totalAmount = groupedExpenses.reduce((sum, group) => sum + group.totalAmount, 0);
-  const paidAmount = groupedExpenses.reduce((sum, group) => sum + group.paidAmount, 0);
-  const unpaidAmount = totalAmount - paidAmount;
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <PageHeader
-        title="Service Billing"
-        subtitle={`${groupedExpenses.length} statement${groupedExpenses.length !== 1 ? 's' : ''}`}
+        title="Services"
+        subtitle={`${groupedExpenses.length} service record${groupedExpenses.length !== 1 ? 's' : ''}`}
         action={
           <div className="flex gap-2">
             <Button 
@@ -316,35 +307,16 @@ const EnhancedExpenses = () => {
         </div>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          <Card className="p-4 text-center shadow-soft">
-            <div className="text-2xl font-bold text-foreground">${totalAmount.toFixed(0)}</div>
-            <div className="text-xs text-muted-foreground mt-1">Total</div>
-          </Card>
-          <Card className="p-4 text-center shadow-soft">
-            <div className="text-2xl font-bold text-success">${paidAmount.toFixed(0)}</div>
-            <div className="text-xs text-muted-foreground mt-1">Paid</div>
-          </Card>
-          <Card className="p-4 text-center shadow-soft">
-            <div className="text-2xl font-bold text-warning">${unpaidAmount.toFixed(0)}</div>
-            <div className="text-xs text-muted-foreground mt-1">Pending</div>
-          </Card>
-        </div>
+        <Card className="p-4 text-center shadow-soft mb-4">
+          <div className="text-2xl font-bold text-foreground">${totalAmount.toFixed(0)}</div>
+          <div className="text-xs text-muted-foreground mt-1">Total Services Value</div>
+        </Card>
 
-        {/* Payment Filter Tabs */}
-        <Tabs value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as typeof paymentFilter)} className="w-full mb-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="paid">Paid</TabsTrigger>
-            <TabsTrigger value="unpaid">Unpaid</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {/* Billing Statements List */}
+        {/* Service Records List */}
         <div className="space-y-4">
           {groupedExpenses.map((group, idx) => (
             <Card key={`${group.patientId}-${group.date}-${idx}`} className="overflow-hidden shadow-soft">
-              {/* Statement Header */}
+              {/* Record Header */}
               <div className="bg-muted/50 px-4 py-3 border-b border-border">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -364,19 +336,6 @@ const EnhancedExpenses = () => {
                         })}</span>
                       </div>
                     </div>
-                  </div>
-                  <div>
-                    {group.isPaid ? (
-                      <Badge className="bg-success/10 text-success border-success/20">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Paid
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Pending
-                      </Badge>
-                    )}
                   </div>
                 </div>
               </div>
@@ -401,11 +360,6 @@ const EnhancedExpenses = () => {
                         <p className="text-sm font-semibold text-foreground">
                           ${expense.totalAmount.toFixed(2)}
                         </p>
-                        {!expense.isPaid && expense.paidAmount > 0 && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Paid: ${expense.paidAmount.toFixed(2)}
-                          </p>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -414,23 +368,11 @@ const EnhancedExpenses = () => {
                 <Separator className="my-3" />
 
                 {/* Totals Section */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-medium text-foreground">${group.totalAmount.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Amount Paid</span>
-                    <span className="font-medium text-success">${group.paidAmount.toFixed(2)}</span>
-                  </div>
-                  {!group.isPaid && (
-                    <div className="flex items-center justify-between pt-2 border-t border-border">
-                      <span className="font-semibold text-foreground">Amount Due</span>
-                      <span className="font-bold text-lg text-warning">
-                        ${(group.totalAmount - group.paidAmount).toFixed(2)}
-                      </span>
-                    </div>
-                  )}
+                <div className="flex items-center justify-between pt-2">
+                  <span className="font-semibold text-foreground">Total</span>
+                  <span className="font-bold text-lg text-foreground">
+                    ${group.totalAmount.toFixed(2)}
+                  </span>
                 </div>
 
                 {/* Action Buttons - Edit/Delete each service */}

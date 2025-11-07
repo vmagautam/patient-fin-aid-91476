@@ -1,14 +1,15 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Receipt, FileText, Package } from 'lucide-react';
+import { LayoutDashboard, Users, Receipt, DollarSign, Package } from 'lucide-react';
 
 const BottomNav = () => {
   const location = useLocation();
   
   const navItems = [
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/', icon: Users, label: 'Patients' },
-    { path: '/expenses', icon: Receipt, label: 'Expenses' },
+    { path: '/expenses', icon: Receipt, label: 'Services' },
+    { path: '/billing', icon: DollarSign, label: 'Billing' },
     { path: '/inventory', icon: Package, label: 'Inventory' },
-    { path: '/reports', icon: FileText, label: 'Reports' },
   ];
 
   return (
