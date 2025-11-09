@@ -50,34 +50,8 @@ const mockPatients: Patient[] = [
 ];
 
 const mockExpenses: Expense[] = [
-  {
-    id: '1',
-    patientId: '1',
-    registrationNumber: 'REG-2024-001',
-    expenseTypeId: '1',
-    expenseTypeName: 'Medicine',
-    date: '2024-03-15',
-    description: 'Paracetamol 500mg',
-    quantity: 20,
-    unitPrice: 2.5,
-    totalAmount: 50,
-    isPaid: true,
-    paidAmount: 50,
-  },
-  {
-    id: '2',
-    patientId: '1',
-    registrationNumber: 'REG-2024-001',
-    expenseTypeId: '2',
-    expenseTypeName: 'Rehab Session',
-    date: '2024-03-14',
-    description: 'Physical therapy session',
-    quantity: 1,
-    unitPrice: 150,
-    totalAmount: 150,
-    isPaid: false,
-    paidAmount: 0,
-  },
+  { id: '1', patientId: '1', registrationNumber: 'REG-2024-001', expenseTypeId: '1', expenseTypeName: 'Medicine', date: '2024-03-15', description: 'Paracetamol 500mg', quantity: 20, unitPrice: 2.5, totalAmount: 50 },
+  { id: '2', patientId: '1', registrationNumber: 'REG-2024-001', expenseTypeId: '2', expenseTypeName: 'Rehab Session', date: '2024-03-14', description: 'Physical therapy session', quantity: 1, unitPrice: 150, totalAmount: 150 },
 ];
 
 const EnhancedPatients = () => {
@@ -93,13 +67,10 @@ const EnhancedPatients = () => {
     return patients.map((patient) => {
       const expenses = mockExpenses.filter((exp) => exp.patientId === patient.id);
       const totalExpenses = expenses.reduce((sum, exp) => sum + exp.totalAmount, 0);
-      const paidAmount = expenses.reduce((sum, exp) => sum + exp.paidAmount, 0);
-      const unpaidAmount = totalExpenses - paidAmount;
 
       return {
         ...patient,
         totalExpenses,
-        unpaidAmount,
         expenseCount: expenses.length,
       };
     });
@@ -160,7 +131,6 @@ const EnhancedPatients = () => {
 
   // Calculate summary stats
   const activeCount = patients.filter(p => p.isActive).length;
-  const totalOutstanding = patientStats.reduce((sum, p) => sum + p.unpaidAmount, 0);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -190,10 +160,10 @@ const EnhancedPatients = () => {
           </Card>
           <Card className="p-3 shadow-soft">
             <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="h-4 w-4 text-warning" />
-              <span className="text-xs text-muted-foreground">Outstanding</span>
+              <DollarSign className="h-4 w-4 text-primary" />
+              <span className="text-xs text-muted-foreground">Total Services</span>
             </div>
-            <div className="text-2xl font-bold text-warning">${totalOutstanding.toFixed(0)}</div>
+            <div className="text-2xl font-bold text-foreground">{mockExpenses.length}</div>
           </Card>
         </div>
 
@@ -271,21 +241,12 @@ const EnhancedPatients = () => {
               </div>
 
               {/* Financial Summary */}
-              {(patient.totalExpenses > 0 || patient.unpaidAmount > 0) && (
+              {patient.totalExpenses > 0 && (
                 <div className="mt-3 pt-3 border-t border-border">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Total Expenses:</span>
+                    <span className="text-muted-foreground">Total Services:</span>
                     <span className="font-semibold text-foreground">${patient.totalExpenses.toFixed(2)}</span>
                   </div>
-                  {patient.unpaidAmount > 0 && (
-                    <div className="flex items-center justify-between text-sm mt-1">
-                      <span className="flex items-center gap-1 text-warning">
-                        <AlertCircle className="h-3 w-3" />
-                        Outstanding:
-                      </span>
-                      <span className="font-semibold text-warning">${patient.unpaidAmount.toFixed(2)}</span>
-                    </div>
-                  )}
                 </div>
               )}
 

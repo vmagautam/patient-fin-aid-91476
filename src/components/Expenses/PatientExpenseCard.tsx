@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DollarSign, Calendar, CheckCircle, XCircle, Edit, Trash2, User } from 'lucide-react';
+import { DollarSign, Calendar, Edit, Trash2, User } from 'lucide-react';
 import { Expense, Patient } from '@/types';
 
 interface PatientExpenseCardProps {
@@ -18,8 +18,6 @@ const PatientExpenseCard = ({
   onExpenseDelete 
 }: PatientExpenseCardProps) => {
   const totalAmount = expenses.reduce((sum, exp) => sum + exp.totalAmount, 0);
-  const paidAmount = expenses.reduce((sum, exp) => sum + exp.paidAmount, 0);
-  const unpaidAmount = totalAmount - paidAmount;
 
   return (
     <Card className="overflow-hidden shadow-medium hover:shadow-strong transition-all">
@@ -50,19 +48,9 @@ const PatientExpenseCard = ({
         )}
 
         {/* Summary */}
-        <div className="grid grid-cols-3 gap-2 mt-4">
-          <div className="bg-white/10 rounded-lg p-2 text-center">
-            <div className="text-xs opacity-80">Total</div>
-            <div className="text-lg font-bold">${totalAmount.toFixed(0)}</div>
-          </div>
-          <div className="bg-white/10 rounded-lg p-2 text-center">
-            <div className="text-xs opacity-80">Paid</div>
-            <div className="text-lg font-bold">${paidAmount.toFixed(0)}</div>
-          </div>
-          <div className="bg-white/10 rounded-lg p-2 text-center">
-            <div className="text-xs opacity-80">Pending</div>
-            <div className="text-lg font-bold">${unpaidAmount.toFixed(0)}</div>
-          </div>
+        <div className="bg-white/10 rounded-lg p-3 mt-4 text-center">
+          <div className="text-xs opacity-80">Total Services</div>
+          <div className="text-2xl font-bold">${totalAmount.toFixed(2)}</div>
         </div>
       </div>
 
@@ -85,11 +73,6 @@ const PatientExpenseCard = ({
                   <Badge variant="outline" className="text-xs">
                     {expense.expenseTypeName}
                   </Badge>
-                  {expense.isPaid ? (
-                    <CheckCircle className="h-4 w-4 text-success" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-warning" />
-                  )}
                 </div>
                 <h4 className="font-semibold text-sm">{expense.description}</h4>
               </div>
@@ -111,12 +94,6 @@ const PatientExpenseCard = ({
                   <DollarSign className="h-4 w-4 text-primary" />
                   <span className="font-semibold">
                     ${expense.totalAmount.toFixed(2)}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs text-muted-foreground">Paid: </span>
-                  <span className="font-medium text-success">
-                    ${expense.paidAmount.toFixed(2)}
                   </span>
                 </div>
               </div>

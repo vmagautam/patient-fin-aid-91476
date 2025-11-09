@@ -77,8 +77,6 @@ const mockExpenses: Expense[] = [
     quantity: 20,
     unitPrice: 2.5,
     totalAmount: 50,
-    isPaid: true,
-    paidAmount: 50,
     medicineId: '1',
   },
   {
@@ -92,8 +90,6 @@ const mockExpenses: Expense[] = [
     quantity: 1,
     unitPrice: 150,
     totalAmount: 150,
-    isPaid: false,
-    paidAmount: 0,
   },
   {
     id: '3',
@@ -106,8 +102,6 @@ const mockExpenses: Expense[] = [
     quantity: 1,
     unitPrice: 500,
     totalAmount: 500,
-    isPaid: true,
-    paidAmount: 500,
   },
   {
     id: '4',
@@ -120,8 +114,6 @@ const mockExpenses: Expense[] = [
     quantity: 30,
     unitPrice: 3,
     totalAmount: 90,
-    isPaid: false,
-    paidAmount: 45,
   },
 ];
 
@@ -133,8 +125,6 @@ type GroupedExpense = {
   date: string;
   expenses: Expense[];
   totalAmount: number;
-  paidAmount: number;
-  isPaid: boolean;
 };
 
 const EnhancedExpenses = () => {
@@ -188,18 +178,11 @@ const EnhancedExpenses = () => {
           date: expense.date,
           expenses: [],
           totalAmount: 0,
-          paidAmount: 0,
-          isPaid: true
         };
       }
       
       acc[key].expenses.push(expense);
       acc[key].totalAmount += expense.totalAmount;
-      acc[key].paidAmount += expense.paidAmount;
-      
-      if (!expense.isPaid) {
-        acc[key].isPaid = false;
-      }
       
       return acc;
     }, {} as Record<string, GroupedExpense>);

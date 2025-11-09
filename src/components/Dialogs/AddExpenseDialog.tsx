@@ -32,8 +32,6 @@ const AddExpenseDialog = ({ open, onOpenChange, onSave, patients, expenseTypes, 
     quantity: editExpense?.quantity || 1,
     unitPrice: editExpense?.unitPrice || 0,
     totalAmount: editExpense?.totalAmount || 0,
-    isPaid: editExpense?.isPaid ?? false,
-    paidAmount: editExpense?.paidAmount || 0,
   });
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
@@ -93,8 +91,6 @@ const AddExpenseDialog = ({ open, onOpenChange, onSave, patients, expenseTypes, 
       quantity: 1,
       unitPrice: 0,
       totalAmount: 0,
-      isPaid: false,
-      paidAmount: 0,
     });
     setSelectedDate(new Date());
   };
@@ -215,45 +211,9 @@ const AddExpenseDialog = ({ open, onOpenChange, onSave, patients, expenseTypes, 
             </div>
           </div>
 
-          <div>
-            <Label>Total Amount</Label>
-            <div className="text-2xl font-bold text-primary">${formData.totalAmount.toFixed(2)}</div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="isPaid"
-                checked={formData.isPaid}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    isPaid: e.target.checked,
-                    paidAmount: e.target.checked ? formData.totalAmount : formData.paidAmount,
-                  })
-                }
-                className="h-4 w-4"
-              />
-              <Label htmlFor="isPaid" className="cursor-pointer">
-                Fully Paid
-              </Label>
-            </div>
-
-            <div>
-              <Label htmlFor="paidAmount">Paid Amount</Label>
-              <Input
-                id="paidAmount"
-                type="number"
-                min="0"
-                max={formData.totalAmount}
-                step="0.01"
-                value={formData.paidAmount}
-                onChange={(e) =>
-                  setFormData({ ...formData, paidAmount: parseFloat(e.target.value) || 0 })
-                }
-              />
-            </div>
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <Label className="text-sm text-muted-foreground">Total Amount</Label>
+            <div className="text-3xl font-bold text-primary mt-1">${formData.totalAmount.toFixed(2)}</div>
           </div>
 
           <DialogFooter>

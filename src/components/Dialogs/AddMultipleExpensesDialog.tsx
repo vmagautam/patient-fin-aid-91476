@@ -21,8 +21,6 @@ interface ExpenseItem {
   quantity: number;
   unitPrice: number;
   totalAmount: number;
-  isPaid: boolean;
-  paidAmount: number;
   medicineId?: string;
 }
 
@@ -62,8 +60,6 @@ const AddMultipleExpensesDialog = ({
       quantity: 1,
       unitPrice: 0,
       totalAmount: 0,
-      isPaid: false,
-      paidAmount: 0,
     }
   ]);
 
@@ -76,8 +72,6 @@ const AddMultipleExpensesDialog = ({
       quantity: 1,
       unitPrice: 0,
       totalAmount: 0,
-      isPaid: false,
-      paidAmount: 0,
     }]);
   };
 
@@ -125,11 +119,6 @@ const AddMultipleExpensesDialog = ({
         // Recalculate total if quantity or price changes
         if (field === 'quantity' || field === 'unitPrice') {
           newItem.totalAmount = newItem.quantity * newItem.unitPrice;
-        }
-        
-        // Auto-set paid amount if marked as paid
-        if (field === 'isPaid' && value === true) {
-          newItem.paidAmount = newItem.totalAmount;
         }
         
         return newItem;
@@ -188,8 +177,6 @@ const AddMultipleExpensesDialog = ({
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       totalAmount: item.totalAmount,
-      isPaid: item.isPaid,
-      paidAmount: item.paidAmount,
       medicineId: item.medicineId,
     }));
 
@@ -210,13 +197,10 @@ const AddMultipleExpensesDialog = ({
       quantity: 1,
       unitPrice: 0,
       totalAmount: 0,
-      isPaid: false,
-      paidAmount: 0,
     }]);
   };
 
   const totalAmount = expenseItems.reduce((sum, item) => sum + item.totalAmount, 0);
-  const totalPaid = expenseItems.reduce((sum, item) => sum + item.paidAmount, 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -385,39 +369,9 @@ const AddMultipleExpensesDialog = ({
                     </div>
                   </div>
 
-                  <div className="bg-muted/30 p-3 rounded-md">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-medium">Total Amount</span>
-                      <span className="text-lg font-bold text-primary">${item.totalAmount.toFixed(2)}</span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id={`isPaid-${item.tempId}`}
-                          checked={item.isPaid}
-                          onChange={(e) => handleFieldChange(item.tempId, 'isPaid', e.target.checked)}
-                          className="h-5 w-5 rounded border-border"
-                        />
-                        <Label htmlFor={`isPaid-${item.tempId}`} className="cursor-pointer text-sm font-medium">
-                          Fully Paid
-                        </Label>
-                      </div>
-
-                      <div>
-                        <Label className="text-xs font-medium text-muted-foreground">Paid Amount ($)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          max={item.totalAmount}
-                          step="0.01"
-                          value={item.paidAmount}
-                          onChange={(e) => handleFieldChange(item.tempId, 'paidAmount', parseFloat(e.target.value) || 0)}
-                          className="mt-1 h-10"
-                        />
-                      </div>
-                    </div>
+                  <div className="bg-muted/30 p-3 rounded-md flex items-center justify-between">
+                    <span className="text-sm font-medium">Total Amount</span>
+                    <span className="text-xl font-bold text-primary">${item.totalAmount.toFixed(2)}</span>
                   </div>
                 </div>
               );
@@ -430,20 +384,10 @@ const AddMultipleExpensesDialog = ({
               <span className="font-semibold">Total Services:</span>
               <span className="text-lg font-bold">{expenseItems.length}</span>
             </div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-semibold">Total Amount:</span>
-              <span className="text-xl font-bold text-primary">${totalAmount.toFixed(2)}</span>
-            </div>
             <div className="flex items-center justify-between">
-              <span className="font-semibold">Total Paid:</span>
-              <span className="text-lg font-bold text-success">${totalPaid.toFixed(2)}</span>
+              <span className="font-semibold">Total Amount:</span>
+              <span className="text-2xl font-bold text-primary">${totalAmount.toFixed(2)}</span>
             </div>
-            {totalAmount > totalPaid && (
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-primary/20">
-                <span className="font-semibold text-warning">Pending:</span>
-                <span className="text-lg font-bold text-warning">${(totalAmount - totalPaid).toFixed(2)}</span>
-              </div>
-            )}
           </div>
 
           <DialogFooter className="gap-2">

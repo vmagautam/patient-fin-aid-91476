@@ -7,8 +7,6 @@ import { Patient } from '@/types';
 interface PatientExpenseCardProps {
   patient: Patient;
   totalExpenses: number;
-  paidAmount: number;
-  unpaidAmount: number;
   expenseCount: number;
   onClick: () => void;
 }
@@ -16,13 +14,9 @@ interface PatientExpenseCardProps {
 const PatientExpenseCard = ({
   patient,
   totalExpenses,
-  paidAmount,
-  unpaidAmount,
   expenseCount,
   onClick,
 }: PatientExpenseCardProps) => {
-  const paymentStatus = unpaidAmount === 0 ? 'paid' : paidAmount === 0 ? 'unpaid' : 'partial';
-
   return (
     <Card className="p-4 shadow-soft hover:shadow-medium transition-all cursor-pointer" onClick={onClick}>
       <div className="flex items-start justify-between mb-3">
@@ -39,21 +33,10 @@ const PatientExpenseCard = ({
 
       <div className="space-y-2 mb-3">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">{expenseCount} expenses</span>
+          <span className="text-muted-foreground">{expenseCount} service{expenseCount !== 1 ? 's' : ''}</span>
           <div className="flex items-center gap-1 font-semibold text-foreground">
             <DollarSign className="h-3 w-3" />
             {totalExpenses.toFixed(2)}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="flex flex-col">
-            <span className="text-muted-foreground">Paid</span>
-            <span className="font-medium text-success">${paidAmount.toFixed(2)}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-muted-foreground">Pending</span>
-            <span className="font-medium text-warning">${unpaidAmount.toFixed(2)}</span>
           </div>
         </div>
       </div>

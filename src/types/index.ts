@@ -52,8 +52,6 @@ export interface Expense {
   quantity: number;
   unitPrice: number;
   totalAmount: number;
-  isPaid: boolean;
-  paidAmount: number;
   medicineId?: string;
 }
 
