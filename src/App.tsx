@@ -23,13 +23,16 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/" element={<EnhancedPatients />} />
+          <Route path="/patients" element={<EnhancedPatients />} />
+          <Route path="/" element={<Dashboard />} />
           <Route path="/expenses" element={<EnhancedExpenses />} />
           <Route path="/billing" element={<Billing />} />
           <Route path="/inventory" element={<EnhancedInventory />} />
           <Route path="/reports" element={<PatientSearchReports />} />
-          <Route path="/reports/patient/:patientId" element={<PatientReport />} />
+          <Route
+            path="/reports/patient/:patientId"
+            element={<PatientReport />}
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

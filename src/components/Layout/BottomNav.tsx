@@ -5,8 +5,8 @@ const BottomNav = () => {
   const location = useLocation();
   
   const navItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/', icon: Users, label: 'Patients' },
+    { path: '/', icon: Users, label: 'Dashboard' },
+    { path: '/patients', icon: LayoutDashboard, label: 'Patients' },
     { path: '/expenses', icon: Receipt, label: 'Services' },
     { path: '/billing', icon: DollarSign, label: 'Billing' },
     { path: '/inventory', icon: Package, label: 'Inventory' },
